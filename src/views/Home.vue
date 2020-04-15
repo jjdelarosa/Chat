@@ -3,7 +3,7 @@
     <v-card-title>
       <v-container>
         <v-row>
-          <v-text-field v-model="newRoom" label="New Room" />
+          <v-text-field v-model="newRoom" label="New Room" @change="add" />
           <v-btn color="purple" @click="add">Add</v-btn>
         </v-row>
       </v-container>
