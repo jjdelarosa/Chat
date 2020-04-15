@@ -19,7 +19,7 @@
 <v-container>
     <div v-for="message in messages" :key="message.id">
         <p class="overline">{{message.author}} on {{ message.createdAt.toLocaleString() }}</p>
-        <p>{{message.text}}</p>
+        <p>{{message.message}}</p>
     </div>
 </v-container>
 <v-footer absolute>
@@ -30,18 +30,62 @@
 </template>
 
 <script>
+import {db} from '../plugins/firebase'
+import { mapGetters } from 'vuex'
+
 export default {
     name: 'Room',
     data() {
         return {
             newMessage: '',
-            room: { id:123,name: 'The Room',createdAt: new Date(), },
-            rooms: [{id:1,name:'Amazing'}, {id: 2, name: 'Other'}],
-            messages: [{id:1, text:'First message', author: 'John De La Rosa', createdAt: new Date()}, {id:2, text:'First message', author: 'Juan', createdAt: new Date()}],
+            room: {},
+            rooms: [],
+            messages: [],
         }
     },
+    computed: {
+        ...mapGetters({
+            user: 'getUser',
+        }),
+    },
+    watch: {
+        '$route.params.id': async function() {
+        await this.$bind('room',db.collection('rooms').doc(this.$route.params.id))
+        await this.$bind(
+                'messages',
+                db
+                .collection('messages')
+                .where('roomId', '==', this.$route.params.id)
+                .orderBy('createdAt'),
+            )
+        },
+    },
+    mounted (){
+        this.bind()
+    },
     methods: {
-        add() {},
+        async add() {
+             if (this.newMessage != '') {
+        await db.collection('messages').add({
+          roomId: this.$route.params.id,
+          author: this.user.displayName,
+          message: this.newMessage,
+          createdAt: new Date(),
+        })
+        this.newMessage = ''
+             }
+        },
+        async bind() {
+            await this.$bind('room',db.collection('rooms').doc(this.$route.params.id))
+            await this.$bind('rooms',db.collection('rooms').orderBy('createdAt'))
+            await this.$bind(
+                'messages',
+                db
+                .collection('messages')
+                .where('roomId', '==', this.$route.params.id)
+                .orderBy('createdAt'),
+            )
+        },
     },
 }
 </script>
